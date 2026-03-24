@@ -1,0 +1,170 @@
+{
+  "conditions": [
+    {
+      "name": "hypertension",
+      "count": 119
+    },
+    {
+      "name": "covid-19",
+      "count": 29
+    },
+    {
+      "name": "diabetes mellitus",
+      "count": 27
+    },
+    {
+      "name": "coronary artery disease",
+      "count": 27
+    },
+    {
+      "name": "hyperlipidemia",
+      "count": 24
+    },
+    {
+      "name": "hypothyroidism",
+      "count": 20
+    },
+    {
+      "name": "type 2 diabetes mellitus",
+      "count": 19
+    },
+    {
+      "name": "sars-cov-2 infection",
+      "count": 18
+    },
+    {
+      "name": "obesity",
+      "count": 16
+    },
+    {
+      "name": "atrial fibrillation",
+      "count": 16
+    }
+  ],
+  "symptoms": [
+    {
+      "name": "fever",
+      "count": 94
+    },
+    {
+      "name": "vomiting",
+      "count": 58
+    },
+    {
+      "name": "nausea",
+      "count": 57
+    },
+    {
+      "name": "dyspnea",
+      "count": 52
+    },
+    {
+      "name": "tachycardia",
+      "count": 52
+    },
+    {
+      "name": "cough",
+      "count": 48
+    },
+    {
+      "name": "shortness of breath",
+      "count": 48
+    },
+    {
+      "name": "abdominal pain",
+      "count": 48
+    },
+    {
+      "name": "weight loss",
+      "count": 45
+    },
+    {
+      "name": "fatigue",
+      "count": 44
+    }
+  ],
+  "medications": [
+    {
+      "name": "prednisone",
+      "count": 31
+    },
+    {
+      "name": "dexamethasone",
+      "count": 26
+    },
+    {
+      "name": "methylprednisolone",
+      "count": 21
+    },
+    {
+      "name": "vancomycin",
+      "count": 20
+    },
+    {
+      "name": "ceftriaxone",
+      "count": 18
+    },
+    {
+      "name": "aspirin",
+      "count": 16
+    },
+    {
+      "name": "azithromycin",
+      "count": 16
+    },
+    {
+      "name": "corticosteroids",
+      "count": 13
+    },
+    {
+      "name": "prednisolone",
+      "count": 11
+    },
+    {
+      "name": "pembrolizumab",
+      "count": 11
+    }
+  ],
+  "procedures": [
+    {
+      "name": "chest x-ray",
+      "count": 41
+    },
+    {
+      "name": "magnetic resonance imaging",
+      "count": 32
+    },
+    {
+      "name": "intubation",
+      "count": 29
+    },
+    {
+      "name": "colonoscopy",
+      "count": 28
+    },
+    {
+      "name": "biopsy",
+      "count": 26
+    },
+    {
+      "name": "computed tomography",
+      "count": 25
+    },
+    {
+      "name": "abdominal ultrasound",
+      "count": 20
+    },
+    {
+      "name": "echocardiogram",
+      "count": 19
+    },
+    {
+      "name": "ultrasound",
+      "count": 16
+    },
+    {
+      "name": "brain mri",
+      "count": 16
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Secrets
+.env
+
+# Vector DB (auto-rebuilt on first boot)
+data/chroma_db/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp

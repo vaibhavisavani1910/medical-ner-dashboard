@@ -1,0 +1,290 @@
+{
+  "conditions": [
+    {
+      "name": "hypertension",
+      "count": 119,
+      "code": "I15.0",
+      "code_system": "ICD-10-CM",
+      "code_description": "Renovascular hypertension"
+    },
+    {
+      "name": "covid-19",
+      "count": 29,
+      "code": "U07.1",
+      "code_system": "ICD-10-CM",
+      "code_description": "COVID-19"
+    },
+    {
+      "name": "diabetes mellitus",
+      "count": 27,
+      "code": "P70.2",
+      "code_system": "ICD-10-CM",
+      "code_description": "Neonatal diabetes mellitus"
+    },
+    {
+      "name": "coronary artery disease",
+      "count": 27,
+      "code": "I25.10",
+      "code_system": "ICD-10-CM",
+      "code_description": "Atherosclerotic heart disease of native coronary artery without angina pectoris"
+    },
+    {
+      "name": "hyperlipidemia",
+      "count": 24,
+      "code": "E78.2",
+      "code_system": "ICD-10-CM",
+      "code_description": "Mixed hyperlipidemia"
+    },
+    {
+      "name": "hypothyroidism",
+      "count": 20,
+      "code": "E03.3",
+      "code_system": "ICD-10-CM",
+      "code_description": "Postinfectious hypothyroidism"
+    },
+    {
+      "name": "type 2 diabetes mellitus",
+      "count": 19,
+      "code": "E11.65",
+      "code_system": "ICD-10-CM",
+      "code_description": "Type 2 diabetes mellitus with hyperglycemia"
+    },
+    {
+      "name": "sars-cov-2 infection",
+      "count": 18,
+      "code": null,
+      "code_system": "ICD-10-CM",
+      "code_description": null
+    },
+    {
+      "name": "obesity",
+      "count": 16,
+      "code": "E66.9",
+      "code_system": "ICD-10-CM",
+      "code_description": "Obesity, unspecified"
+    },
+    {
+      "name": "atrial fibrillation",
+      "count": 16,
+      "code": "I48.0",
+      "code_system": "ICD-10-CM",
+      "code_description": "Paroxysmal atrial fibrillation"
+    }
+  ],
+  "symptoms": [
+    {
+      "name": "fever",
+      "count": 94,
+      "code": "A78",
+      "code_system": "ICD-10-CM",
+      "code_description": "Q fever"
+    },
+    {
+      "name": "vomiting",
+      "count": 58,
+      "code": "R11.10",
+      "code_system": "ICD-10-CM",
+      "code_description": "Vomiting, unspecified"
+    },
+    {
+      "name": "nausea",
+      "count": 57,
+      "code": "R11.0",
+      "code_system": "ICD-10-CM",
+      "code_description": "Nausea"
+    },
+    {
+      "name": "dyspnea",
+      "count": 52,
+      "code": "R06.00",
+      "code_system": "ICD-10-CM",
+      "code_description": "Dyspnea, unspecified"
+    },
+    {
+      "name": "tachycardia",
+      "count": 52,
+      "code": "P29.11",
+      "code_system": "ICD-10-CM",
+      "code_description": "Neonatal tachycardia"
+    },
+    {
+      "name": "cough",
+      "count": 48,
+      "code": "R05.1",
+      "code_system": "ICD-10-CM",
+      "code_description": "Acute cough"
+    },
+    {
+      "name": "shortness of breath",
+      "count": 48,
+      "code": "R06.02",
+      "code_system": "ICD-10-CM",
+      "code_description": "Shortness of breath"
+    },
+    {
+      "name": "abdominal pain",
+      "count": 48,
+      "code": "R10.84",
+      "code_system": "ICD-10-CM",
+      "code_description": "Generalized abdominal pain"
+    },
+    {
+      "name": "weight loss",
+      "count": 45,
+      "code": "R63.4",
+      "code_system": "ICD-10-CM",
+      "code_description": "Abnormal weight loss"
+    },
+    {
+      "name": "fatigue",
+      "count": 44,
+      "code": "R53.83",
+      "code_system": "ICD-10-CM",
+      "code_description": "Other fatigue"
+    }
+  ],
+  "medications": [
+    {
+      "name": "prednisone",
+      "count": 31,
+      "code": "8640",
+      "code_system": "RxNorm",
+      "code_description": "prednisone"
+    },
+    {
+      "name": "dexamethasone",
+      "count": 26,
+      "code": "3264",
+      "code_system": "RxNorm",
+      "code_description": "dexamethasone"
+    },
+    {
+      "name": "methylprednisolone",
+      "count": 21,
+      "code": "6902",
+      "code_system": "RxNorm",
+      "code_description": "methylprednisolone"
+    },
+    {
+      "name": "vancomycin",
+      "count": 20,
+      "code": "11124",
+      "code_system": "RxNorm",
+      "code_description": "vancomycin"
+    },
+    {
+      "name": "ceftriaxone",
+      "count": 18,
+      "code": "2193",
+      "code_system": "RxNorm",
+      "code_description": "ceftriaxone"
+    },
+    {
+      "name": "aspirin",
+      "count": 16,
+      "code": "1191",
+      "code_system": "RxNorm",
+      "code_description": "aspirin"
+    },
+    {
+      "name": "azithromycin",
+      "count": 16,
+      "code": "18631",
+      "code_system": "RxNorm",
+      "code_description": "azithromycin"
+    },
+    {
+      "name": "corticosteroids",
+      "count": 13,
+      "code": null,
+      "code_system": "RxNorm",
+      "code_description": null
+    },
+    {
+      "name": "prednisolone",
+      "count": 11,
+      "code": "8638",
+      "code_system": "RxNorm",
+      "code_description": "prednisolone"
+    },
+    {
+      "name": "pembrolizumab",
+      "count": 11,
+      "code": "1547545",
+      "code_system": "RxNorm",
+      "code_description": "pembrolizumab"
+    }
+  ],
+  "procedures": [
+    {
+      "name": "chest x-ray",
+      "count": 41,
+      "code": null,
+      "code_system": "HCPCS",
+      "code_description": null
+    },
+    {
+      "name": "magnetic resonance imaging",
+      "count": 32,
+      "code": "C1770",
+      "code_system": "HCPCS",
+      "code_description": "Imaging coil, mr, insertable"
+    },
+    {
+      "name": "intubation",
+      "count": 29,
+      "code": "G8569",
+      "code_system": "HCPCS",
+      "code_description": "Prol intubation req"
+    },
+    {
+      "name": "colonoscopy",
+      "count": 28,
+      "code": "G6019",
+      "code_system": "HCPCS",
+      "code_description": "Colonoscopy lesion removal"
+    },
+    {
+      "name": "biopsy",
+      "count": 26,
+      "code": "G0364",
+      "code_system": "HCPCS",
+      "code_description": "Bone marrow aspirate &biopsy"
+    },
+    {
+      "name": "computed tomography",
+      "count": 25,
+      "code": "S8032",
+      "code_system": "HCPCS",
+      "code_description": "Low dose ct lung screening"
+    },
+    {
+      "name": "abdominal ultrasound",
+      "count": 20,
+      "code": "C9744",
+      "code_system": "HCPCS",
+      "code_description": "Abd us w/contrast"
+    },
+    {
+      "name": "echocardiogram",
+      "count": 19,
+      "code": null,
+      "code_system": "HCPCS",
+      "code_description": null
+    },
+    {
+      "name": "ultrasound",
+      "count": 16,
+      "code": "C1753",
+      "code_system": "HCPCS",
+      "code_description": "Cath, intravas ultrasound"
+    },
+    {
+      "name": "brain mri",
+      "count": 16,
+      "code": "G9538",
+      "code_system": "HCPCS",
+      "code_description": "Adv brain image ordered"
+    }
+  ]
+}

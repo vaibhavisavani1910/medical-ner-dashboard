@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedNER Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          animation: {
+            'fade-in':   'fadeIn 0.35s ease-out',
+            'slide-up':  'slideUp 0.35s ease-out',
+            'slide-in':  'slideIn 0.3s ease-out',
+            'pulse-slow':'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
+          },
+          keyframes: {
+            fadeIn:  { '0%': { opacity: 0 },                              '100%': { opacity: 1 } },
+            slideUp: { '0%': { opacity: 0, transform: 'translateY(14px)'},'100%': { opacity: 1, transform: 'translateY(0)' } },
+            slideIn: { '0%': { opacity: 0, transform: 'translateX(24px)'},'100%': { opacity: 1, transform: 'translateX(0)' } },
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js"></script>
+
+  <!-- markdown-it for rendering assistant responses -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14/dist/markdown-it.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #030712; color: #f1f5f9; margin: 0; }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+
+    .glass { backdrop-filter: blur(12px); }
+    .card  { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; transition: border-color .2s, box-shadow .2s; }
+    .card:hover { border-color: #334155; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+
+    .tab-btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid transparent; cursor: pointer; transition: all .2s; background: transparent; color: #94a3b8; }
+    .tab-btn:hover { background: #1e293b; color: #e2e8f0; }
+    .tab-btn.active { color: #fff; border-color: currentColor; }
+
+    .code-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: monospace; letter-spacing: .02em; }
+    .entity-chip { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; margin: 3px; border: 1px solid transparent; animation: fadeIn .3s ease-out; }
+
+    .analyze-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: none; padding: 12px 32px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(99,102,241,.3); }
+    .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,.5); }
+    .analyze-btn:active { transform: translateY(0); }
+    .analyze-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    .stat-card { background: #0f172a; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; position: relative; overflow: hidden; }
+
+    .header-gradient { background: linear-gradient(135deg, #0f172a 0%, #1a0533 50%, #0f172a 100%); border-bottom: 1px solid #1e293b; }
+
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #64748b; border-bottom: 1px solid #1e293b; background: #020617; }
+    tbody tr { border-bottom: 1px solid #0f172a; transition: background .15s; }
+    tbody tr:hover { background: #1e293b44; }
+    tbody td { padding: 10px 12px; font-size: 13px; color: #cbd5e1; }
+
+    #ner-textarea { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 10px; color: #e2e8f0; font-family: 'Inter',sans-serif; font-size: 14px; line-height: 1.7; padding: 16px; resize: vertical; min-height: 140px; outline: none; transition: border-color .2s; }
+    #ner-textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+    #ner-textarea::placeholder { color: #334155; }
+
+    /* ── Chat panel ───────────────────────────────────────────────────── */
+    #chat-panel {
+      position: fixed; right: 0; top: 0; bottom: 0;
+      width: 400px; z-index: 50;
+      background: #0a0f1e;
+      border-left: 1px solid #1e293b;
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      box-shadow: -8px 0 40px rgba(0,0,0,.6);
+    }
+    #chat-panel.open { transform: translateX(0); }
+
+    #chat-toggle {
+      position: fixed; right: 24px; bottom: 28px; z-index: 60;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 20px rgba(99,102,241,.5);
+      transition: all .2s;
+    }
+    #chat-toggle:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,.7); }
+
+    #chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+    .msg-user {
+      align-self: flex-end;
+      max-width: 85%;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 16px 16px 4px 16px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      animation: slideUp .3s ease-out;
+      box-shadow: 0 2px 12px rgba(79,70,229,.3);
+    }
+
+    .msg-bot {
+      align-self: flex-start;
+      max-width: 90%;
+      animation: slideUp .3s ease-out;
+    }
+    .msg-bot-bubble {
+      background: #111827;
+      border: 1px solid #1e293b;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 16px 16px 16px 4px;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .msg-bot-bubble p { margin: 0 0 6px; }
+    .msg-bot-bubble p:last-child { margin: 0; }
+    .msg-bot-bubble ul { margin: 4px 0 6px 16px; padding: 0; }
+    .msg-bot-bubble li { margin-bottom: 3px; }
+    .msg-bot-bubble strong { color: #e2e8f0; }
+    .msg-bot-bubble code { background: #1e293b; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #a5b4fc; }
+
+    .msg-sources { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .source-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 500; background: #0f172a; border: 1px solid #1e293b; color: #475569; cursor: default; }
+    .source-chip:hover { border-color: #334155; color: #64748b; }
+
+    .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 12px 14px; background: #111827; border: 1px solid #1e293b; border-radius: 16px 16px 16px 4px; width: fit-content; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #4f46e5; animation: bounce .9s ease-in-out infinite; }
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+    #chat-input-area { padding: 12px 16px; border-top: 1px solid #1e293b; background: #0a0f1e; display: flex; gap: 8px; align-items: flex-end; }
+    #chat-input { flex: 1; background: #111827; border: 1px solid #1e293b; border-radius: 10px; color: #e2e8f0; font-family: 'Inter',sans-serif; font-size: 13px; line-height: 1.5; padding: 10px 12px; resize: none; outline: none; max-height: 120px; transition: border-color .2s; }
+    #chat-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79,70,229,.15); }
+    #chat-input::placeholder { color: #334155; }
+
+    #send-btn { width: 38px; height: 38px; border-radius: 9px; background: linear-gradient(135deg,#4f46e5,#7c3aed); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
+    #send-btn:hover { transform: scale(1.05); box-shadow: 0 2px 10px rgba(79,70,229,.5); }
+    #send-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    #send-btn svg { width: 16px; height: 16px; fill: white; }
+
+    .empty-chat { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #334155; text-align: center; padding: 24px; gap: 12px; }
+    .empty-chat .icon { font-size: 36px; }
+    .suggestion-btn { padding: 8px 14px; border-radius: 8px; background: #111827; border: 1px solid #1e293b; color: #64748b; font-size: 12px; cursor: pointer; transition: all .15s; text-align: left; }
+    .suggestion-btn:hover { background: #1e293b; color: #94a3b8; border-color: #334155; }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header class="header-gradient px-8 py-5">
+    <div class="max-w-screen-xl mx-auto flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-1">
+          <div style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);box-shadow:0 0 8px #6366f1;"></div>
+          <h1 style="font-size:22px;font-weight:800;background:linear-gradient(135deg,#e2e8f0,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            MedNER Dashboard
+          </h1>
+        </div>
+        <p style="font-size:12px;color:#475569;margin-left:22px;">
+          1,000 clinical records &nbsp;·&nbsp; GPT-4o-mini extraction &nbsp;·&nbsp; ICD-10 · RxNorm · HCPCS codes
+        </p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="live-badge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:#0a1628;border:1px solid #1e3a5f;font-size:12px;color:#38bdf8;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#38bdf8;" class="animate-pulse-slow"></span>
+          Live NER
+        </div>
+        <div id="rag-badge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:#0f0a28;border:1px solid #3b1e5f;font-size:12px;color:#a855f7;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#a855f7;" class="animate-pulse-slow"></span>
+          RAG chatbot
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="max-w-screen-xl mx-auto px-8 py-8" style="padding-right:calc(2rem + 0px);">
+
+    <!-- STAT CARDS -->
+    <div id="stats-row" class="grid grid-cols-4 gap-4 mb-8" style="display:none;"></div>
+
+    <!-- CATEGORY EXPLORER -->
+    <div class="card mb-8">
+      <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <button class="tab-btn active" id="tab-conditions"  onclick="switchTab('conditions')"  style="color:#f43f5e;border-color:#f43f5e33;background:#f43f5e11;">🫀 Conditions</button>
+        <button class="tab-btn"        id="tab-symptoms"    onclick="switchTab('symptoms')"    style="color:#94a3b8;">🩺 Symptoms</button>
+        <button class="tab-btn"        id="tab-medications" onclick="switchTab('medications')" style="color:#94a3b8;">💊 Medications</button>
+        <button class="tab-btn"        id="tab-procedures"  onclick="switchTab('procedures')"  style="color:#94a3b8;">🔬 Procedures</button>
+        <div style="margin-left:auto;font-size:12px;color:#475569;" id="tab-subtitle"></div>
+      </div>
+      <div style="padding:20px;">
+        <div id="chart-container" style="margin-bottom:24px;"></div>
+        <div id="table-container" style="border-radius:8px;overflow:hidden;border:1px solid #1e293b;"></div>
+      </div>
+    </div>
+
+    <!-- LIVE NER ANALYZER -->
+    <div class="card">
+      <div style="padding:20px 24px;border-bottom:1px solid #1e293b;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f133,#a855f633);display:flex;align-items:center;justify-content:center;font-size:16px;">✨</div>
+          <div>
+            <h2 style="font-size:15px;font-weight:700;color:#e2e8f0;margin:0;">Live Clinical NER</h2>
+            <p style="font-size:12px;color:#475569;margin:2px 0 0;">Paste any clinical text to extract medical entities in real-time</p>
+          </div>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#475569;align-self:center;">Examples:</span>
+          <button onclick="loadExample(0)" class="example-btn" style="padding:4px 10px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:11px;cursor:pointer;">Cardiology note</button>
+          <button onclick="loadExample(1)" class="example-btn" style="padding:4px 10px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:11px;cursor:pointer;">Diabetes case</button>
+          <button onclick="loadExample(2)" class="example-btn" style="padding:4px 10px;border-radius:6px;background:#1e293b;border:1px solid #334155;color:#94a3b8;font-size:11px;cursor:pointer;">ED visit</button>
+        </div>
+        <textarea id="ner-textarea" placeholder="Paste a clinical note here…"></textarea>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:10px;">
+          <p style="font-size:12px;color:#334155;margin:0;">Excludes negations &amp; family history · Powered by GPT-4o-mini</p>
+          <button class="analyze-btn" id="analyze-btn" onclick="runNER()">
+            <span id="btn-icon">✦</span>
+            <span id="btn-text">Analyze Text</span>
+          </button>
+        </div>
+        <div id="ner-results" style="display:none;margin-top:24px;" class="animate-slide-up">
+          <div style="height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin-bottom:20px;"></div>
+          <p style="font-size:12px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Extracted Entities</p>
+          <div class="grid grid-cols-2 gap-4" id="ner-grid"></div>
+        </div>
+        <div id="ner-error" style="display:none;margin-top:16px;padding:12px 16px;border-radius:8px;background:#1c0a0a;border:1px solid #7f1d1d;color:#fca5a5;font-size:13px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="text-align:center;padding:24px;color:#1e293b;font-size:11px;border-top:1px solid #0f172a;margin-top:40px;">
+    MedNER Dashboard &nbsp;·&nbsp; GPT-4o-mini &nbsp;·&nbsp; RAG via ChromaDB + text-embedding-3-small
+  </footer>
+
+  <!-- ── CHAT PANEL ──────────────────────────────────────────────────────── -->
+  <div id="chat-panel">
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;background:#0a0f1e;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 10px rgba(79,70,229,.4);">🤖</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#e2e8f0;">MedBot</div>
+          <div style="font-size:11px;color:#475569;">Ask anything about the dataset</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button onclick="clearChat()" title="Clear chat" style="width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid #1e293b;color:#475569;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">↺</button>
+        <button onclick="closeChat()" style="width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid #1e293b;color:#475569;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">×</button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-messages">
+      <div class="empty-chat" id="empty-state">
+        <div class="icon">🏥</div>
+        <div style="font-size:14px;font-weight:600;color:#334155;">Ask me about the data</div>
+        <div style="font-size:12px;color:#1e293b;margin-bottom:8px;">Try one of these questions:</div>
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+          <button class="suggestion-btn" onclick="sendSuggestion(this)">What are the top 3 conditions?</button>
+          <button class="suggestion-btn" onclick="sendSuggestion(this)">What ICD-10 code is hypertension?</button>
+          <button class="suggestion-btn" onclick="sendSuggestion(this)">Which symptoms co-occur with fever?</button>
+          <button class="suggestion-btn" onclick="sendSuggestion(this)">What medications are most common?</button>
+          <button class="suggestion-btn" onclick="sendSuggestion(this)">Summarize the procedures data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div id="chat-input-area">
+      <textarea id="chat-input" rows="1" placeholder="Ask a question about the data…" onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+      <button id="send-btn" onclick="sendChat()" title="Send (Enter)">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Floating chat toggle -->
+  <button id="chat-toggle" onclick="toggleChat()" title="Open MedBot">🤖</button>
+
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+// Set to your Render URL for production, e.g. 'https://medner-api.onrender.com'
+const API_BASE = '';
+
+const md = window.markdownit({ html: false, breaks: true, linkify: false });
+
+const CATEGORIES = {
+  conditions:  { label:'Conditions',  icon:'🫀', color:'#f43f5e', dim:'#f43f5e18', text:'#fda4af' },
+  symptoms:    { label:'Symptoms',    icon:'🩺', color:'#8b5cf6', dim:'#8b5cf618', text:'#c4b5fd' },
+  medications: { label:'Medications', icon:'💊', color:'#10b981', dim:'#10b98118', text:'#6ee7b7' },
+  procedures:  { label:'Procedures',  icon:'🔬', color:'#38bdf8', dim:'#38bdf818', text:'#7dd3fc' },
+};
+
+const CODE_COLORS = {
+  'ICD-10-CM': { bg:'#1c2a1c', text:'#86efac', border:'#16a34a44' },
+  'RxNorm':    { bg:'#1a1a2e', text:'#a5b4fc', border:'#6366f144' },
+  'HCPCS':     { bg:'#1a2535', text:'#7dd3fc', border:'#0284c744' },
+  default:     { bg:'#1e1e2e', text:'#94a3b8', border:'#33415544' },
+};
+
+const EXAMPLES = [
+  `Patient is a 72-year-old male with a history of hypertension, coronary artery disease, and hyperlipidemia. He presents with worsening dyspnea and bilateral leg edema. Current medications include lisinopril 10mg, atorvastatin 40mg, and aspirin 81mg. Echocardiogram ordered. Chest X-ray shows mild pulmonary congestion.`,
+  `65-year-old female with type 2 diabetes mellitus and hypothyroidism. HbA1c is 8.9%. She reports polyuria and fatigue. Currently on metformin 1000mg twice daily and levothyroxine 75mcg. Blood glucose monitoring recommended. Labs ordered.`,
+  `42-year-old male presenting to the ED with acute abdominal pain, nausea, and fever. Denies diarrhea. CT abdomen/pelvis ordered. WBC elevated at 14.2. Started on IV fluids and IV antibiotics. Surgical consult placed for possible appendicitis.`,
+];
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let dashboardData = null;
+let activeTab     = 'conditions';
+let chart         = null;
+let chatHistory   = [];   // [{ role, content }]
+let chatOpen      = false;
+let botBusy       = false;
+
+// ─── Boot ──────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch(`${API_BASE}/api/data`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    dashboardData = await res.json();
+    renderStats();
+    renderTab('conditions');
+    document.getElementById('stats-row').style.display = 'grid';
+  } catch (e) {
+    console.error('Failed to load dashboard data:', e);
+  }
+}
+
+// ─── Stats ─────────────────────────────────────────────────────────────────
+function renderStats() {
+  const row = document.getElementById('stats-row');
+  row.innerHTML = '';
+  for (const [cat, cfg] of Object.entries(CATEGORIES)) {
+    const entities = dashboardData[cat] || [];
+    const total    = entities.reduce((s, e) => s + e.count, 0);
+    const coded    = entities.filter(e => e.code).length;
+    row.innerHTML += `
+      <div class="stat-card animate-fade-in" style="border-top:2px solid ${cfg.color}22;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+          <span style="font-size:22px;">${cfg.icon}</span>
+          <span style="padding:3px 8px;border-radius:4px;background:${cfg.dim};color:${cfg.color};font-size:11px;font-weight:600;">${coded}/${entities.length} coded</span>
+        </div>
+        <div style="font-size:28px;font-weight:800;color:${cfg.color};line-height:1;">${total.toLocaleString()}</div>
+        <div style="font-size:12px;color:#475569;margin-top:4px;">${cfg.label} mentions</div>
+        <div style="height:3px;border-radius:2px;background:${cfg.dim};margin-top:12px;">
+          <div style="height:100%;border-radius:2px;background:${cfg.color};width:${Math.round(coded/entities.length*100)}%;"></div>
+        </div>
+      </div>`;
+  }
+}
+
+// ─── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(cat) {
+  for (const c of Object.keys(CATEGORIES)) {
+    const btn = document.getElementById(`tab-${c}`);
+    const cfg = CATEGORIES[c];
+    if (c === cat) {
+      btn.classList.add('active');
+      btn.style.cssText += `color:${cfg.color};border-color:${cfg.color}44;background:${cfg.dim};`;
+    } else {
+      btn.classList.remove('active');
+      btn.style.color = '#94a3b8';
+      btn.style.borderColor = 'transparent';
+      btn.style.background = 'transparent';
+    }
+  }
+  activeTab = cat;
+  renderTab(cat);
+}
+
+function renderTab(cat) {
+  if (!dashboardData) return;
+  const entities = dashboardData[cat] || [];
+  const cfg      = CATEGORIES[cat];
+  document.getElementById('tab-subtitle').textContent =
+    `${entities.length} top entities · ${entities.filter(e => e.code).length} coded`;
+  renderChart(entities, cfg);
+  renderTable(entities, cfg);
+}
+
+// ─── Chart ──────────────────────────────────────────────────────────────────
+function renderChart(entities, cfg) {
+  const container = document.getElementById('chart-container');
+  if (chart) { chart.destroy(); chart = null; }
+  container.innerHTML = '<div id="apex-chart"></div>';
+
+  const names    = entities.map(e => toTitle(e.name));
+  const counts   = entities.map(e => e.count);
+  const maxCount = Math.max(...counts);
+
+  chart = new ApexCharts(document.getElementById('apex-chart'), {
+    series: [{ name:'Records', data: counts }],
+    chart: { type:'bar', height:280, background:'transparent', toolbar:{ show:false }, animations:{ enabled:true, easing:'easeinout', speed:500 } },
+    plotOptions: { bar:{ horizontal:true, borderRadius:4, borderRadiusApplication:'end', dataLabels:{ position:'right' }, barHeight:'58%' } },
+    colors: [cfg.color],
+    dataLabels: { enabled:true, style:{ fontSize:'11px', fontWeight:600, colors:[cfg.color] }, offsetX:8, formatter: v => v.toLocaleString() },
+    xaxis: { categories:names, labels:{ style:{ colors:'#475569', fontSize:'12px' } }, axisBorder:{ show:false }, axisTicks:{ show:false }, max: Math.ceil(maxCount*1.2) },
+    yaxis: { labels:{ style:{ colors:'#94a3b8', fontSize:'12px', fontWeight:500 }, maxWidth:180 } },
+    grid: { borderColor:'#1e293b', xaxis:{ lines:{ show:true } }, yaxis:{ lines:{ show:false } } },
+    tooltip: {
+      theme:'dark',
+      custom: ({ dataPointIndex }) => {
+        const e = entities[dataPointIndex];
+        const codePart = e.code
+          ? `<div style="margin-top:5px;font-size:11px;color:#64748b;">${e.code_system}: <span style="color:${cfg.color};font-weight:600;">${e.code}</span></div>`
+          : '';
+        return `<div style="padding:10px 14px;background:#0f172a;border:1px solid #1e293b;border-radius:8px;min-width:160px;">
+          <div style="font-weight:600;color:#e2e8f0;">${toTitle(e.name)}</div>
+          <div style="color:#64748b;font-size:12px;margin-top:2px;">${e.count.toLocaleString()} records</div>
+          ${codePart}
+        </div>`;
+      }
+    },
+    fill: { type:'gradient', gradient:{ shade:'dark', type:'horizontal', gradientToColors:[cfg.color+'88'], stops:[0,100] } },
+  });
+  chart.render();
+}
+
+// ─── Table ──────────────────────────────────────────────────────────────────
+function renderTable(entities, cfg) {
+  const maxCount = Math.max(...entities.map(e => e.count));
+  const rows = entities.map((e, i) => {
+    const pct = Math.round(e.count / maxCount * 100);
+    const cs  = CODE_COLORS[e.code_system] || CODE_COLORS.default;
+    const badge = e.code
+      ? `<span class="code-badge" style="background:${cs.bg};color:${cs.text};border:1px solid ${cs.border};">${e.code}</span>`
+      : `<span style="color:#334155;font-size:12px;">—</span>`;
+    const desc = e.code_description
+      ? `<span style="color:#64748b;font-size:12px;">${e.code_description}</span>`
+      : `<span style="color:#334155;font-size:12px;">—</span>`;
+    return `<tr>
+      <td style="color:#334155;font-weight:600;">#${i+1}</td>
+      <td><span style="font-weight:500;color:#e2e8f0;">${toTitle(e.name)}</span></td>
+      <td>
+        <span style="font-weight:600;color:${cfg.color};">${e.count.toLocaleString()}</span>
+        <div style="height:3px;border-radius:2px;background:${cfg.dim};width:${pct}%;margin-top:4px;"></div>
+      </td>
+      <td>${badge}</td>
+      <td><span style="font-size:11px;color:#475569;">${e.code_system}</span></td>
+      <td>${desc}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('table-container').innerHTML = `
+    <table>
+      <thead><tr>
+        <th style="width:40px;">#</th><th>Entity</th><th style="width:100px;">Count</th>
+        <th style="width:100px;">Code</th><th style="width:110px;">System</th><th>Description</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ─── Live NER ──────────────────────────────────────────────────────────────
+function loadExample(idx) {
+  document.getElementById('ner-textarea').value = EXAMPLES[idx];
+  document.getElementById('ner-results').style.display = 'none';
+  document.getElementById('ner-error').style.display = 'none';
+}
+
+async function runNER() {
+  const text = document.getElementById('ner-textarea').value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  document.getElementById('btn-icon').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('btn-text').textContent = 'Analyzing…';
+  document.getElementById('ner-results').style.display = 'none';
+  document.getElementById('ner-error').style.display = 'none';
+
+  try {
+    const res  = await fetch(`${API_BASE}/api/ner`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ text }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    renderNERResults(data);
+    document.getElementById('ner-results').style.display = 'block';
+  } catch (e) {
+    const err = document.getElementById('ner-error');
+    err.textContent = `Error: ${e.message}`;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btn-icon').textContent = '✦';
+    document.getElementById('btn-text').textContent = 'Analyze Text';
+  }
+}
+
+function renderNERResults(data) {
+  let html = '';
+  for (const [cat, cfg] of Object.entries(CATEGORIES)) {
+    const items = data[cat] || [];
+    const chips = items.length
+      ? items.map(item => `<span class="entity-chip" style="background:${cfg.dim};color:${cfg.text};border-color:${cfg.color}33;">${toTitle(item)}</span>`).join('')
+      : `<span style="font-size:12px;color:#334155;padding:4px 0;display:block;">None detected</span>`;
+    html += `
+      <div style="background:#020617;border:1px solid #1e293b;border-radius:10px;padding:14px;border-top:2px solid ${cfg.color}33;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <span style="font-size:14px;">${cfg.icon}</span>
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${cfg.color};">${cfg.label}</span>
+          ${items.length ? `<span style="margin-left:auto;font-size:11px;color:#475569;background:#1e293b;padding:1px 7px;border-radius:10px;">${items.length}</span>` : ''}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:2px;">${chips}</div>
+      </div>`;
+  }
+  document.getElementById('ner-grid').innerHTML = html;
+}
+
+// ─── Chat panel ────────────────────────────────────────────────────────────
+function toggleChat() {
+  chatOpen ? closeChat() : openChat();
+}
+function openChat() {
+  chatOpen = true;
+  document.getElementById('chat-panel').classList.add('open');
+  document.getElementById('chat-toggle').textContent = '×';
+  document.getElementById('chat-toggle').style.fontSize = '22px';
+  setTimeout(() => document.getElementById('chat-input').focus(), 320);
+}
+function closeChat() {
+  chatOpen = false;
+  document.getElementById('chat-panel').classList.remove('open');
+  document.getElementById('chat-toggle').textContent = '🤖';
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  showEmptyState();
+}
+
+function showEmptyState() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = `
+    <div class="empty-chat" id="empty-state">
+      <div class="icon">🏥</div>
+      <div style="font-size:14px;font-weight:600;color:#334155;">Ask me about the data</div>
+      <div style="font-size:12px;color:#1e293b;margin-bottom:8px;">Try one of these questions:</div>
+      <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+        <button class="suggestion-btn" onclick="sendSuggestion(this)">What are the top 3 conditions?</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this)">What ICD-10 code is hypertension?</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this)">Which symptoms co-occur with fever?</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this)">What medications are most common?</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this)">Summarize the procedures data</button>
+      </div>
+    </div>`;
+}
+
+function sendSuggestion(btn) {
+  document.getElementById('chat-input').value = btn.textContent;
+  sendChat();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function appendUserMessage(text) {
+  const empty = document.getElementById('empty-state');
+  if (empty) empty.remove();
+  const msgs = document.getElementById('chat-messages');
+  const div  = document.createElement('div');
+  div.className = 'msg-user';
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendTypingIndicator() {
+  const msgs = document.getElementById('chat-messages');
+  const div  = document.createElement('div');
+  div.className = 'msg-bot';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function appendBotMessage(answer, sources) {
+  const msgs    = document.getElementById('chat-messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg-bot';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bot-bubble';
+  bubble.innerHTML = md.render(answer);
+
+  wrapper.appendChild(bubble);
+
+  if (sources && sources.length) {
+    const srcRow = document.createElement('div');
+    srcRow.className = 'msg-sources';
+    srcRow.innerHTML = sources.map(s => {
+      const catCfg = CATEGORIES[s.category] || {};
+      return `<span class="source-chip" title="${escHtml(s.snippet)}">
+        ${catCfg.icon || '📄'} ${s.category}
+      </span>`;
+    }).join('');
+    wrapper.appendChild(srcRow);
+  }
+
+  msgs.appendChild(wrapper);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text || botBusy) return;
+
+  botBusy = true;
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+
+  appendUserMessage(text);
+  appendTypingIndicator();
+
+  try {
+    const res = await fetch(`${API_BASE}/api/chat`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message: text, history: chatHistory }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    removeTypingIndicator();
+    appendBotMessage(data.answer, data.sources);
+
+    // Update history (keep last 10 turns)
+    chatHistory.push({ role:'user',      content: text });
+    chatHistory.push({ role:'assistant', content: data.answer });
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+
+  } catch (e) {
+    removeTypingIndicator();
+    appendBotMessage(`⚠️ Error: ${e.message}`, []);
+  } finally {
+    botBusy = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function toTitle(s)  { return s.replace(/\b\w/g, c => c.toUpperCase()); }
+function escHtml(s)  { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Keyboard shortcut for NER
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && document.activeElement.id === 'ner-textarea') runNER();
+});
+
+// Boot
+init();
+</script>
+</body>
+</html>
